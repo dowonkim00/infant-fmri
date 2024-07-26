@@ -203,7 +203,11 @@ class fMRIDataModule(pl.LightningDataModule):
                 "shuffle_time_sequence": self.hparams.shuffle_time_sequence,
                 "input_type": self.hparams.input_type,
                 "label_scaling_method" : self.hparams.label_scaling_method,
-                "dtype":'float16'}
+                "dtype":'float16',
+                "use_ic": self.hparams.use_ic,
+                "input_features_path": self.hparams.input_features_path,
+                "input_mask_path": self.hparams.input_mask_path,
+                "gestational_ages_file": self.hparams.gestational_ages_file}
         
         subject_dict = self.make_subject_dict()
         if os.path.exists(self.split_file_path):
@@ -280,7 +284,7 @@ class fMRIDataModule(pl.LightningDataModule):
         group.add_argument("--val_split", default=0.15, type=float)
         group.add_argument("--batch_size", type=int, default=4)
         group.add_argument("--eval_batch_size", type=int, default=16)
-        group.add_argument("--img_size", nargs="+", default=[96, 96, 96, 20], type=int, help="image size (adjust the fourth dimension according to your --sequence_length argument)")
+        group.add_argument("--img_size", nargs="+", default=[96, 96, 96, 7], type=int, help="image size (adjust the fourth dimension according to your --sequence_length argument)")
         group.add_argument("--sequence_length", type=int, default=20)
         group.add_argument("--stride_between_seq", type=int, default=1, help="skip some fMRI volumes between fMRI sub-sequences")
         group.add_argument("--stride_within_seq", type=int, default=1, help="skip some fMRI volumes within fMRI sub-sequences")
@@ -288,4 +292,9 @@ class fMRIDataModule(pl.LightningDataModule):
         group.add_argument("--with_voxel_norm", type=str2bool, default=False)
         group.add_argument("--shuffle_time_sequence", action='store_true')
         group.add_argument("--limit_training_samples", type=int, default=None, help="use if you want to limit training samples")
+        
+        group.add_argument("--use_ic", action='store_true')
+        group.add_argument("--input_features_path", type=str, default="default")
+        group.add_argument("--input_mask_path", type=str, default="default")
+        group.add_argument("--gestational_ages_file", type=str, default="default")
         return parser

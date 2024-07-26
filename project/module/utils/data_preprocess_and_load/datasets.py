@@ -303,89 +303,141 @@ class dHCP(BaseDataset):
 
     def _set_data(self, root, subject_dict):
         data = []
-        img_root = os.path.join(root, 'img')
-
-        for i, sub_ses in enumerate(subject_dict):
-            sex, target = subject_dict[sub_ses]
-            # subject_name = subject[4:]
+                
+        if self.use_ic:
+            md = pd.read_csv(self.gestational_ages_file, delimiter='\t')
+            gestational_ages = pd.DataFrame(md, columns=['ses', 'id', 'ga']) # ses  id  ga       
             
-            subject_path = os.path.join(img_root, sub_ses)
-
-            num_frames = len(os.listdir(subject_path)) - 2 # voxel mean & std
-            session_duration = num_frames - self.sample_duration + 1
-
-            for start_frame in range(0, session_duration, self.stride):
-                data_tuple = (i, sub_ses, subject_path, start_frame, self.stride, num_frames, target, sex)
+            for i, sub_ses in enumerate(subject_dict):
+                sex, target = subject_dict[sub_ses]
+                comps = os.path.join(str(sub_ses), str(sub_ses)+f'_features_{self.sequence_length}_comps.npy')
+                subject_path = os.path.join(self.input_features_path, comps)
+                
+                # look up the gestational age
+                subject_id = sub_ses.split('_')[0]
+                session_id = int(sub_ses.split('_')[1].split('-')[1])
+                ga = int(gestational_ages.loc[(gestational_ages['id'] == subject_id) & (gestational_ages['ses'] == session_id), 'ga'].values[0])
+                
+                input_mask_path = os.path.join(self.input_mask_path, f"mask_ga_{ga}.nii.gz")
+                start_frame = 0
+                data_tuple = (i, sub_ses, subject_path, start_frame, target, sex, input_mask_path) 
                 data.append(data_tuple)
+            # train dataset
+            # for regression tasks
+            if self.train: 
+                self.target_values = np.array([tup[4] for tup in data]).reshape(-1, 1)
+        else:
+            img_root = os.path.join(root, 'img')
+
+            for i, sub_ses in enumerate(subject_dict):
+                sex, target = subject_dict[sub_ses]
+                # subject_name = subject[4:]
+            
+                subject_path = os.path.join(img_root, sub_ses)
+
+                num_frames = len(os.listdir(subject_path)) - 2 # voxel mean & std
+                session_duration = num_frames - self.sample_duration + 1
+
+                for start_frame in range(0, session_duration, self.stride):
+                    data_tuple = (i, sub_ses, subject_path, start_frame, self.stride, num_frames, target, sex)
+                    data.append(data_tuple)
                         
         
-        # train dataset
-        # for regression tasks
-        if self.train: 
-            self.target_values = np.array([tup[6] for tup in data]).reshape(-1, 1)
+            # train dataset
+            # for regression tasks
+            if self.train: 
+                self.target_values = np.array([tup[6] for tup in data]).reshape(-1, 1)
 
         return data
 
     def __getitem__(self, index):
-        _, sub_ses, subject_path, start_frame, sequence_length, num_frames, target, sex = self.data[index]
-        #age = self.label_dict[age] if isinstance(age, str) else age.float()
         
-        #contrastive learning
-        if self.contrastive:
-            y, rand_y = self.load_sequence(subject_path, start_frame, sequence_length)
-
-            background_value = y.flatten()[0]
-            y = y.permute(0,4,1,2,3)
-            # ABCD image shape: 79, 97, 85
-            # y = torch.nn.functional.pad(y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
-            # dHCP rest image shape: 68, 67, 45
-            y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
-            y = y.permute(0,2,3,4,1)
-
-            background_value = rand_y.flatten()[0]
-            rand_y = rand_y.permute(0,4,1,2,3)
-            # ABCD image shape: 79, 97, 85
-            # rand_y = torch.nn.functional.pad(rand_y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
-            # dHCP rest image shape: 68, 67, 45
-            y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
-            rand_y = rand_y.permute(0,2,3,4,1)
-
+        if self.use_ic:
+            _, sub_ses, subject_path, start_frame, target, sex, input_mask_path = self.data[index]
+            features = np.load(subject_path) # ic * features
+            mask = nb.load(input_mask_path).get_fdata() 
+            non_zero_indices = np.nonzero(mask.flatten())[0]
+            num_ic = features.shape[0]
+            final_matrix = np.zeros((num_ic,) + mask.shape)
+            flat_final_matrix = final_matrix.reshape(num_ic, -1)
+            flat_final_matrix[:, non_zero_indices] = features
+            final_matrix = flat_final_matrix.reshape((num_ic,) + mask.shape)
+            y = torch.tensor(final_matrix)
+            
+            # padding -> 96, 96, 96 not necessary
+            # background_value = y.flatten()[0]
+            #y = torch.nn.functional.pad(y, (3, 2, -7, -6, 3, 2), value=background_value) # ic, 96, 96, 96
+            
+            y = y.permute(1,2,3,0).unsqueeze(0).half() # 1, 96, 96, 96, ic
+                
             return {
-                "fmri_sequence": (y, rand_y),
-                "subject_name": sub_ses,
-                "target": target,
-                "TR": start_frame,
-                "sex": sex
-            } 
+                    "fmri_sequence": y,
+                    "subject_name": sub_ses,
+                    "target": target,
+                    "TR": start_frame,
+                    "sex": sex,
+                }
+        else:
+        
+            _, sub_ses, subject_path, start_frame, sequence_length, num_frames, target, sex = self.data[index]
+            #age = self.label_dict[age] if isinstance(age, str) else age.float()
+        
+            #contrastive learning
+            if self.contrastive:
+                y, rand_y = self.load_sequence(subject_path, start_frame, sequence_length)
 
-        # resting or task
-        else:   
-            y = self.load_sequence(subject_path, start_frame, sequence_length, num_frames)
-
-            background_value = y.flatten()[0]
-            y = y.permute(0,4,1,2,3)
-            if self.input_type == 'rest':
-                # ABCD rest image shape: 79, 97, 85
-                # latest version might be 96,96,95
+                background_value = y.flatten()[0]
+                y = y.permute(0,4,1,2,3)
+                # ABCD image shape: 79, 97, 85
                 # y = torch.nn.functional.pad(y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 # dHCP rest image shape: 68, 67, 45
                 y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
-            elif self.input_type == 'task':
-                # ABCD task image shape: 96, 96, 95
-                # background value = 0
-                # minmax scaled in brain (0~1)
-                # y = torch.nn.functional.pad(y, (0, 1, 0, 0, 0, 0), value=background_value) # adjust this padding level according to your data
+                y = y.permute(0,2,3,4,1)
+
+                background_value = rand_y.flatten()[0]
+                rand_y = rand_y.permute(0,4,1,2,3)
+                # ABCD image shape: 79, 97, 85
+                # rand_y = torch.nn.functional.pad(rand_y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 # dHCP rest image shape: 68, 67, 45
                 y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
-            y = y.permute(0,2,3,4,1)
+                rand_y = rand_y.permute(0,2,3,4,1)
 
-            return {
-                "fmri_sequence": y,
-                "subject_name": sub_ses,
-                "target": target,
-                "TR": start_frame,
-                "sex": sex,
-            } 
+                return {
+                    "fmri_sequence": (y, rand_y),
+                    "subject_name": sub_ses,
+                    "target": target,
+                    "TR": start_frame,
+                    "sex": sex
+                } 
+
+            # resting or task
+            else:   
+                y = self.load_sequence(subject_path, start_frame, sequence_length, num_frames)
+
+                background_value = y.flatten()[0]
+                y = y.permute(0,4,1,2,3)
+                if self.input_type == 'rest':
+                    # ABCD rest image shape: 79, 97, 85
+                    # latest version might be 96,96,95
+                    # y = torch.nn.functional.pad(y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                    # dHCP rest image shape: 68, 67, 45
+                    y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                elif self.input_type == 'task':
+                    # ABCD task image shape: 96, 96, 95
+                    # background value = 0
+                    # minmax scaled in brain (0~1)
+                    # y = torch.nn.functional.pad(y, (0, 1, 0, 0, 0, 0), value=background_value) # adjust this padding level according to your data
+                    # dHCP rest image shape: 68, 67, 45
+                    y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                y = y.permute(0,2,3,4,1)
+
+                return {
+                    "fmri_sequence": y,
+                    "subject_name": sub_ses,
+                    "target": target,
+                    "TR": start_frame,
+                    "sex": sex,
+                } 
     
 class Dummy(BaseDataset):
     def __init__(self, **kwargs):
