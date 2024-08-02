@@ -32,6 +32,9 @@ def cli_main():
     parser.add_argument("--test_ckpt_path", type=str, help="A path to the previous checkpoint that intends to evaluate (--test_only should be True)")
     parser.add_argument("--freeze_feature_extractor", action='store_true', help="Whether to freeze the feature extractor (for evaluating the pre-trained weight)")
     parser.add_argument('--use_optuna', action='store_true', help='Whether to use Optuna for hyperparameter optimization')
+    
+    parser.add_argument("--load_swifun_encoder", type=str, default=None, help="path to the pre-trained model weight file (.pth) of the SwiFTxSwiFUN encoder, if wanted")
+    
     temp_args, _ = parser.parse_known_args()
 
     # Set classifier
@@ -150,7 +153,12 @@ def cli_main():
 
     # ------------ model -------------
     model = Classifier(data_module = data_module, **vars(args)) 
-
+    
+    if args.load_swifun_encoder:
+        print(f'loading SwiFTxSwiFUN encoder model from {args.load_swifun_encoder}')
+        ckpt = torch.load(args.load_swifun_encoder)
+        model.model.load_state_dict(ckpt)
+    
     if args.load_model_path is not None:
         print(f'loading model from {args.load_model_path}')
         path = args.load_model_path
