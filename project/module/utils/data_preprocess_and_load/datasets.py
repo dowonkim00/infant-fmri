@@ -356,9 +356,9 @@ class dHCP(BaseDataset):
             final_matrix = flat_final_matrix.reshape((num_ic,) + self.mask.shape)
             y = torch.tensor(final_matrix)
             
-            # padding -> 96, 96, 96 not necessary
-            # background_value = y.flatten()[0]
-            #y = torch.nn.functional.pad(y, (3, 2, -7, -6, 3, 2), value=background_value) # ic, 96, 96, 96
+            #padding
+            background_value = y.flatten()[0]
+            y = torch.nn.functional.pad(y, (9, 10, 4, 5, 9, 10), value=background_value)
             
             y = y.permute(1,2,3,0).unsqueeze(0).half() # 1, 96, 96, 96, ic
                 
