@@ -206,8 +206,7 @@ class fMRIDataModule(pl.LightningDataModule):
                 "dtype":'float16',
                 "use_ic": self.hparams.use_ic,
                 "input_features_path": self.hparams.input_features_path,
-                "input_mask_path": self.hparams.input_mask_path,
-                "gestational_ages_file": self.hparams.gestational_ages_file}
+                "input_mask_path": self.hparams.input_mask_path}
         
         subject_dict = self.make_subject_dict()
         if os.path.exists(self.split_file_path):
