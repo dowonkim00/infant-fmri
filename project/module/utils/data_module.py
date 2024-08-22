@@ -296,5 +296,4 @@ class fMRIDataModule(pl.LightningDataModule):
         group.add_argument("--use_ic", action='store_true')
         group.add_argument("--input_features_path", type=str, default="default")
         group.add_argument("--input_mask_path", type=str, default="default")
-        group.add_argument("--gestational_ages_file", type=str, default="default")
         return parser

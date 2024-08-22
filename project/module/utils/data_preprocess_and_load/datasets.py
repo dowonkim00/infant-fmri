@@ -305,22 +305,16 @@ class dHCP(BaseDataset):
         data = []
                 
         if self.use_ic:
-            md = pd.read_csv(self.gestational_ages_file, delimiter='\t')
-            gestational_ages = pd.DataFrame(md, columns=['ses', 'id', 'ga']) # ses  id  ga       
+            self.mask = nb.load(self.input_mask_path).get_fdata() 
+            self.non_zero_indices = np.nonzero(self.mask.flatten())[0]  
             
             for i, sub_ses in enumerate(subject_dict):
                 sex, target = subject_dict[sub_ses]
                 comps = os.path.join(str(sub_ses), str(sub_ses)+f'_features_{self.sequence_length}_comps.npy')
                 subject_path = os.path.join(self.input_features_path, comps)
                 
-                # look up the gestational age
-                subject_id = sub_ses.split('_')[0]
-                session_id = int(sub_ses.split('_')[1].split('-')[1])
-                ga = int(gestational_ages.loc[(gestational_ages['id'] == subject_id) & (gestational_ages['ses'] == session_id), 'ga'].values[0])
-                
-                input_mask_path = os.path.join(self.input_mask_path, f"mask_ga_{ga}.nii.gz")
                 start_frame = 0
-                data_tuple = (i, sub_ses, subject_path, start_frame, target, sex, input_mask_path) 
+                data_tuple = (i, sub_ses, subject_path, start_frame, target, sex) 
                 data.append(data_tuple)
             # train dataset
             # for regression tasks
@@ -353,15 +347,13 @@ class dHCP(BaseDataset):
     def __getitem__(self, index):
         
         if self.use_ic:
-            _, sub_ses, subject_path, start_frame, target, sex, input_mask_path = self.data[index]
+            _, sub_ses, subject_path, start_frame, target, sex = self.data[index]
             features = np.load(subject_path) # ic * features
-            mask = nb.load(input_mask_path).get_fdata() 
-            non_zero_indices = np.nonzero(mask.flatten())[0]
             num_ic = features.shape[0]
-            final_matrix = np.zeros((num_ic,) + mask.shape)
+            final_matrix = np.zeros((num_ic,) + self.mask.shape)
             flat_final_matrix = final_matrix.reshape(num_ic, -1)
-            flat_final_matrix[:, non_zero_indices] = features
-            final_matrix = flat_final_matrix.reshape((num_ic,) + mask.shape)
+            flat_final_matrix[:, self.non_zero_indices] = features
+            final_matrix = flat_final_matrix.reshape((num_ic,) + self.mask.shape)
             y = torch.tensor(final_matrix)
             
             # padding -> 96, 96, 96 not necessary
