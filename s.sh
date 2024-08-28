@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /pscratch/sd/d/dowon/SwiFT
+cd /global/homes/d/dowon/infant-fmri
 #source /usr/anaconda3/etc/profile.d/conda.sh
 module load conda
 conda activate py39
