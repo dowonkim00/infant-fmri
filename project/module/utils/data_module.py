@@ -172,6 +172,30 @@ class fMRIDataModule(pl.LightningDataModule):
             meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_sex_and_age.csv"))
             if self.hparams.downstream_task == 'sex': task_name = 'sex'
             elif self.hparams.downstream_task == 'age': task_name = 'age'
+            elif self.hparams.downstream_task == 'bsid_cog_risk':
+                self.hparams.downstream_task = 'sex'
+                task_name = 'sex'
+                meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_bsid_cog_risk.csv"))
+            elif self.hparams.downstream_task == 'bsid_lang_risk':
+                self.hparams.downstream_task = 'sex'
+                task_name = 'sex'
+                meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_bsid_lang_risk.csv"))
+            elif self.hparams.downstream_task == 'bsid_mot_risk':
+                self.hparams.downstream_task = 'sex'
+                task_name = 'sex'
+                meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_bsid_mot_risk.csv"))
+            elif self.hparams.downstream_task == 'bsid_cog_composite':
+                self.hparams.downstream_task = 'age'
+                task_name = 'age'
+                meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_bsid_cog_composite.csv"))
+            elif self.hparams.downstream_task == 'bsid_lang_composite':
+                self.hparams.downstream_task = 'age'
+                task_name = 'age'
+                meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_bsid_lang_composite.csv"))
+            elif self.hparams.downstream_task == 'bsid_mot_composite':
+                self.hparams.downstream_task = 'age'
+                task_name = 'age'
+                meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_bsid_mot_composite.csv"))
             #elif self.hparams.downstream_task == 'int_total': task_name = 'nihtbx_totalcomp_uncorrected'
             else: raise ValueError('downstream task not supported')
            
