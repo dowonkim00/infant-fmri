@@ -383,7 +383,9 @@ class dHCP(BaseDataset):
                 # ABCD image shape: 79, 97, 85
                 # y = torch.nn.functional.pad(y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 # dHCP rest image shape: 68, 67, 45
-                y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                # y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                # dHCP rest image shape (registered): 45, 55, 45
+                y = torch.nn.functional.pad(y, (10, 9, 5, 4, 10, 9), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 y = y.permute(0,2,3,4,1)
 
                 background_value = rand_y.flatten()[0]
@@ -391,7 +393,9 @@ class dHCP(BaseDataset):
                 # ABCD image shape: 79, 97, 85
                 # rand_y = torch.nn.functional.pad(rand_y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 # dHCP rest image shape: 68, 67, 45
-                y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                # y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                # dHCP rest image shape (registered): 45, 55, 45
+                y = torch.nn.functional.pad(y, (10, 9, 5, 4, 10, 9), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 rand_y = rand_y.permute(0,2,3,4,1)
 
                 return {
@@ -413,14 +417,18 @@ class dHCP(BaseDataset):
                     # latest version might be 96,96,95
                     # y = torch.nn.functional.pad(y, (6, 5, 0, 0, 9, 8), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                     # dHCP rest image shape: 68, 67, 45
-                    y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                    # y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                    # dHCP rest image shape (registered): 45, 55, 45
+                    y = torch.nn.functional.pad(y, (10, 9, 5, 4, 10, 9), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 elif self.input_type == 'task':
                     # ABCD task image shape: 96, 96, 95
                     # background value = 0
                     # minmax scaled in brain (0~1)
                     # y = torch.nn.functional.pad(y, (0, 1, 0, 0, 0, 0), value=background_value) # adjust this padding level according to your data
                     # dHCP rest image shape: 68, 67, 45
-                    y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                    # y = torch.nn.functional.pad(y, (26, 25, 15, 14, 14, 14), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
+                    # dHCP rest image shape (registered): 45, 55, 45
+                    y = torch.nn.functional.pad(y, (10, 9, 5, 4, 10, 9), value=background_value)[:,:,:,:96,:] # adjust this padding level according to your data
                 y = y.permute(0,2,3,4,1)
 
                 return {
