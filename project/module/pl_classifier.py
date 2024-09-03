@@ -50,9 +50,9 @@ class LitClassifier(pl.LightningModule):
 
         # Heads
         if not self.hparams.pretraining:
-            if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check:
+            if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or 'risk' in self.hparams.downstream_task or self.hparams.scalability_check:
                 self.output_head = load_model("clf_mlp", self.hparams)
-            elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression':
+            elif self.hparams.downstream_task == 'age' or 'composite' in self.hparams.downstream_task or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression':
                 self.output_head = load_model("reg_mlp", self.hparams)
         elif self.hparams.use_contrastive:
             self.output_head = load_model("emb_mlp", self.hparams)
@@ -114,11 +114,11 @@ class LitClassifier(pl.LightningModule):
         feature = self.model(fmri)
 
         # Classification task
-        if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check:
+        if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
             logits = self.output_head(feature).squeeze() #self.clf(feature).squeeze()
             target = target_value.float().squeeze()
         # Regression task
-        elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression':
+        elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression' or 'composite' in self.hparams.downstream_task:
             # target_mean, target_std = self.determine_target_mean_std()
             logits = self.output_head(feature) # (batch,1) or # tuple((batch,1), (batch,1))
             unnormalized_target = target_value.float() # (batch,1)
@@ -189,7 +189,7 @@ class LitClassifier(pl.LightningModule):
         else:
             subj, logits, target = self._compute_logits(batch, augment_during_training = self.hparams.augment_during_training)
 
-            if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check:
+            if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
                 loss = F.binary_cross_entropy_with_logits(logits, target) # target is float
                 acc = self.metric.get_accuracy_binary(logits, target.float().squeeze())
                 result_dict = {
@@ -197,7 +197,7 @@ class LitClassifier(pl.LightningModule):
                 f"{mode}_acc": acc,
                 }
 
-            elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression':
+            elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression' or 'composite' in self.hparams.downstream_task:
                 loss = F.mse_loss(logits.squeeze(), target.squeeze())
                 l1 = F.l1_loss(logits.squeeze(), target.squeeze())
                 result_dict = {
@@ -224,7 +224,7 @@ class LitClassifier(pl.LightningModule):
         subj_targets = torch.tensor(subj_targets, device = total_out.device) 
         
     
-        if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check:
+        if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
             if self.hparams.adjust_thresh:
                 # move threshold to maximize balanced accuracy
                 best_bal_acc = 0
@@ -335,7 +335,7 @@ class LitClassifier(pl.LightningModule):
     def _save_predictions(self,total_subjs,total_out, mode):
         self.subject_accuracy = {}
         for subj, output in zip(total_subjs,total_out):
-            if self.hparams.downstream_task == 'sex':
+            if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
                 score = torch.sigmoid(output[0]).item()
             else:
                 score = output[0].item()

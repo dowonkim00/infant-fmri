@@ -360,7 +360,7 @@ class dHCP(BaseDataset):
             background_value = y.flatten()[0]
             y = torch.nn.functional.pad(y, (9, 10, 4, 5, 9, 10), value=background_value)
             
-            y = y.permute(1,2,3,0).unsqueeze(0).half() # 1, 96, 96, 96, ic
+            y = y.permute(1,2,3,0).unsqueeze(0).half() # 1, 64, 64, 64, ic
                 
             return {
                     "fmri_sequence": y,
