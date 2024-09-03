@@ -22,7 +22,7 @@ import nibabel as nb
 from .models.load_model import load_model
 from .utils.metrics import Metrics
 from .utils.parser import str2bool
-from .utils.losses import NTXentLoss, global_local_temporal_contrastive
+from .utils.losses import NTXentLoss, global_local_temporal_contrastive, WeightedFocalLoss
 from .utils.lr_scheduler import WarmupCosineSchedule, CosineAnnealingWarmUpRestarts
 
 from einops import rearrange
@@ -198,7 +198,10 @@ class LitClassifier(pl.LightningModule):
                 }
 
             elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression' or 'composite' in self.hparams.downstream_task:
-                loss = F.mse_loss(logits.squeeze(), target.squeeze())
+                if self.hparams.use_focal:
+                    loss = WeightedFocalLoss()(logits, target)
+                else:
+                    loss = F.mse_loss(logits.squeeze(), target.squeeze())
                 l1 = F.l1_loss(logits.squeeze(), target.squeeze())
                 result_dict = {
                     f"{mode}_loss": loss,
@@ -521,6 +524,8 @@ class LitClassifier(pl.LightningModule):
         group.add_argument("--last_layer_full_MSA", type=str2bool, default=False, help="whether to use full-scale multi-head self-attention at the last layers")
         group.add_argument("--clf_head_version", type=str, default="v1", help="clf head version, v2 has a hidden layer")
         group.add_argument("--attn_drop_rate", type=float, default=0, help="dropout rate of attention layers")
+        
+        group.add_argument("--use_focal", action='store_true', help="whether to apply focal loss during classification")
 
         # others
         group.add_argument("--scalability_check", action='store_true', help="whether to check scalability")
