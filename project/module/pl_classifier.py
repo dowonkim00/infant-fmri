@@ -362,7 +362,7 @@ class LitClassifier(pl.LightningModule):
                         adjusted_mse = mse
                         adjusted_mae = mae
 
-                    pearson_coef = pearson(preds_group.flatten().to(pearson.device()), targets_group.flatten().to(pearson.device()))
+                    pearson_coef = pearson(preds_group.flatten().to(pearson.device), targets_group.flatten().to(pearson.device))
 
                     self.log(f"{mode}_corrcoef_{i}", pearson_coef, sync_dist=True)
                     self.log(f"{mode}_mse_{i}", mse, sync_dist=True)
