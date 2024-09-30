@@ -216,8 +216,8 @@ class LitClassifier(pl.LightningModule):
         # (total iteration/world_size) numbers of samples are passed into _evaluate_metrics.
         subjects = np.unique(subj_array)
         
-        print(total_out.shape) # 32,2 | 32,2,3
-        print(total_out)
+        #print(total_out.shape) # 32,2 | 32,2,3
+        #print(total_out)
         
         subj_avg_logits = []
         subj_targets = []
@@ -225,8 +225,8 @@ class LitClassifier(pl.LightningModule):
         for subj in subjects:
             #print('total_out.shape:',total_out.shape) # total_out.shape: torch.Size([16, 2])
             subj_logits = total_out[subj_array == subj,0]
-            print('subj_logits:',subj_logits)
-            print('subj_targets:',total_out[subj_array == subj,1])
+            #print('subj_logits:',subj_logits)
+            #print('subj_targets:',total_out[subj_array == subj,1])
             if 'multi' in self.hparams.downstream_task:
                 subj_avg_logits.append(torch.mean(subj_logits, dim=0).cpu().numpy())
                 subj_targets.append(total_out[subj_array == subj,1][0].cpu().numpy())
@@ -236,15 +236,15 @@ class LitClassifier(pl.LightningModule):
         subj_avg_logits = torch.tensor(subj_avg_logits, device = total_out.device) 
         subj_targets = torch.tensor(subj_targets, device = total_out.device) 
         
-        print('subj_avg_logits:',subj_avg_logits)
-        print('subj_targets:',subj_targets)
+        #print('subj_avg_logits:',subj_avg_logits)
+        #print('subj_targets:',subj_targets)
         
         if 'multi' in self.hparams.downstream_task:        
             subj_avg_logits = subj_avg_logits.flatten().squeeze().to(total_out.device) # Shape: [num_subjects, 3] -> [num_subjects*3]
             subj_targets = subj_targets.flatten().squeeze().to(total_out.device) # Shape: [num_subjects, 3] -> [num_subjects*3]
             
-            print('subj_avg_logits:',subj_avg_logits.shape)
-            print('subj_targets:',subj_targets.shape)
+            #print('subj_avg_logits:',subj_avg_logits.shape)
+            #print('subj_targets:',subj_targets.shape)
     
         if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
             if self.hparams.adjust_thresh:
