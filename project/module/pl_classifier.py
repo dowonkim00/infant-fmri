@@ -337,8 +337,8 @@ class LitClassifier(pl.LightningModule):
             
             if 'multi' in self.hparams.downstream_task:
                 for i in range(3):
-                    preds_group = subj_avg_logits[i::3]
-                    targets_group = subj_targets[i::3]
+                    preds_group = subj_avg_logits[i::3].cpu()
+                    targets_group = subj_targets[i::3].cpu()
 
                     mse = F.mse_loss(preds_group, targets_group)
                     mae = F.l1_loss(preds_group, targets_group)
