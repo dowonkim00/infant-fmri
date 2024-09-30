@@ -221,23 +221,33 @@ class LitClassifier(pl.LightningModule):
         
         subj_avg_logits = []
         subj_targets = []
-        
-        #if 'multi' in self.hparams.downstream_task_type:
-        #    for subj in subjects:
-        #        subj_logits = total_out[subj_array == subj,0] 
-        #        subj_avg_logits.append(torch.mean(subj_logits, dim=0))
-        #        subj_targets.append(total_out[subj_array == subj,1][0].item())
-            
 
         for subj in subjects:
             #print('total_out.shape:',total_out.shape) # total_out.shape: torch.Size([16, 2])
             subj_logits = total_out[subj_array == subj,0]
             print('subj_logits:',subj_logits)
             print('subj_targets:',total_out[subj_array == subj,1])
-            subj_avg_logits.append(torch.mean(subj_logits).item())
-            subj_targets.append(total_out[subj_array == subj,1][0].item())
+            if 'multi' in self.hparams.downstream_task:
+                subj_avg_logits = torch.mean(subj_logits, dim=0).numpy()
+                subj_targets.append(total_out[subj_array == subj,1][0].numpy())
+            else:
+                subj_avg_logits.append(torch.mean(subj_logits).item())
+                subj_targets.append(total_out[subj_array == subj,1][0].item())
         subj_avg_logits = torch.tensor(subj_avg_logits, device = total_out.device) 
         subj_targets = torch.tensor(subj_targets, device = total_out.device) 
+        
+        print('subj_avg_logits:',subj_avg_logits.shape)
+        print('subj_targets:',subj_targets.shape)
+        
+        if 'multi' in self.hparams.downstream_task:
+            subj_avg_logits = torch.stack(subj_avg_logits).to(total_out.device).squeeze()  # Shape: [num_subjects, 3]
+            subj_targets = torch.stack(subj_targets).to(total_out.device).squeeze()  # Shape: [num_subjects, 3]
+        
+            subj_avg_logits = subj_avg_logits.flatten().squeeze()
+            subj_targets = subj_targets.flatten().squeeze()
+            
+            print('subj_avg_logits:',subj_avg_logits.shape)
+            print('subj_targets:',subj_targets.shape)
         
     
         if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
@@ -267,6 +277,7 @@ class LitClassifier(pl.LightningModule):
             else:
                 acc_func = BinaryAccuracy().to(total_out.device)
                 
+            
             auroc_func = BinaryAUROC().to(total_out.device)
             acc = acc_func((subj_avg_logits >= 0).int(), subj_targets)
             #print((subj_avg_logits>=0).int().cpu())
