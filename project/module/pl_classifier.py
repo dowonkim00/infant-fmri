@@ -232,10 +232,10 @@ class LitClassifier(pl.LightningModule):
         for subj in subjects:
             #print('total_out.shape:',total_out.shape) # total_out.shape: torch.Size([16, 2])
             subj_logits = total_out[subj_array == subj,0]
-            subj_avg_logits.append(torch.mean(subj_logits).item())
-            subj_targets.append(total_out[subj_array == subj,1][0].item())
             print('subj_logits:',subj_logits)
             print('subj_targets:',total_out[subj_array == subj,1])
+            subj_avg_logits.append(torch.mean(subj_logits).item())
+            subj_targets.append(total_out[subj_array == subj,1][0].item())
         subj_avg_logits = torch.tensor(subj_avg_logits, device = total_out.device) 
         subj_targets = torch.tensor(subj_targets, device = total_out.device) 
         
