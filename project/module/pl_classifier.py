@@ -284,6 +284,35 @@ class LitClassifier(pl.LightningModule):
             self.log(f"{mode}_acc", acc, sync_dist=True)
             self.log(f"{mode}_balacc", bal_acc_sk, sync_dist=True)
             self.log(f"{mode}_AUROC", auroc, sync_dist=True)
+            
+            if 'multi' in self.hparams.downstream_task:
+                for i in range(3):
+                    preds_group = subj_avg_logits[i::3]
+                    targets_group = subj_targets[i::3]
+                    
+                    #preds_group = subj_avg_logits[..., i]
+                    #targets_group = subj_targets[..., i]
+                    
+                    #print(subj_avg_logits.shape, subj_targets.shape)
+                    #print(
+                    #    f"preds_group: {preds_group.shape}, targets_group: {targets_group.shape}"
+                    #)
+    
+                    preds_group_binary = (preds_group >= 0).int()
+                    #targets_group_binary = (targets_group >= 0).int()
+                    
+                    #print(preds_group_binary)
+                    #print(targets_group_binary)
+    
+                    acc = acc_func(preds_group_binary, targets_group)
+    
+                    bal_acc_sk = balanced_accuracy_score(preds_group_binary.cpu(), targets_group.cpu())
+    
+                    auroc = auroc_func((preds_group >= 0).int().cpu(), targets_group.cpu())
+                        
+                    self.log(f"{mode}_acc_{i}", acc, sync_dist=True)
+                    self.log(f"{mode}_balacc_{i}", bal_acc_sk, sync_dist=True)
+                    self.log(f"{mode}_AUROC_{i}", auroc, sync_dist=True)
 
         # regression target is normalized
         elif self.hparams.downstream_task == 'age' or self.hparams.downstream_task == 'int_total' or self.hparams.downstream_task == 'int_fluid' or self.hparams.downstream_task_type == 'regression':          
