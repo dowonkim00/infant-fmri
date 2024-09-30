@@ -216,6 +216,9 @@ class LitClassifier(pl.LightningModule):
         # (total iteration/world_size) numbers of samples are passed into _evaluate_metrics.
         subjects = np.unique(subj_array)
         
+        print(total_out.shape)
+        print(total_out)
+        
         subj_avg_logits = []
         subj_targets = []
         for subj in subjects:
