@@ -228,8 +228,8 @@ class LitClassifier(pl.LightningModule):
             print('subj_logits:',subj_logits)
             print('subj_targets:',total_out[subj_array == subj,1])
             if 'multi' in self.hparams.downstream_task:
-                subj_avg_logits = torch.mean(subj_logits, dim=0).numpy()
-                subj_targets.append(total_out[subj_array == subj,1][0].numpy())
+                subj_avg_logits = torch.mean(subj_logits, dim=0)#.numpy()
+                subj_targets.append(total_out[subj_array == subj,1][0]#.numpy())
             else:
                 subj_avg_logits.append(torch.mean(subj_logits).item())
                 subj_targets.append(total_out[subj_array == subj,1][0].item())
