@@ -239,16 +239,12 @@ class LitClassifier(pl.LightningModule):
         print('subj_avg_logits:',subj_avg_logits)
         print('subj_targets:',subj_targets)
         
-        if 'multi' in self.hparams.downstream_task:
-            subj_avg_logits = torch.stack(subj_avg_logits).to(total_out.device).squeeze()  # Shape: [num_subjects, 3]
-            subj_targets = torch.stack(subj_targets).to(total_out.device).squeeze()  # Shape: [num_subjects, 3]
-        
-            subj_avg_logits = subj_avg_logits.flatten().squeeze()
-            subj_targets = subj_targets.flatten().squeeze()
+        if 'multi' in self.hparams.downstream_task:        
+            subj_avg_logits = subj_avg_logits.flatten().squeeze().to(total_out.device) # Shape: [num_subjects, 3] -> [num_subjects*3]
+            subj_targets = subj_targets.flatten().squeeze().to(total_out.device) # Shape: [num_subjects, 3] -> [num_subjects*3]
             
             print('subj_avg_logits:',subj_avg_logits.shape)
             print('subj_targets:',subj_targets.shape)
-        
     
         if self.hparams.downstream_task == 'sex' or self.hparams.downstream_task_type == 'classification' or self.hparams.scalability_check or 'risk' in self.hparams.downstream_task:
             if self.hparams.adjust_thresh:
