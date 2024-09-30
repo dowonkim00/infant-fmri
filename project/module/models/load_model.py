@@ -10,6 +10,14 @@ def load_model(model_name, hparams=None):
         to_float = True
 
     print(to_float)
+    
+    if 'multi' in hparams.downstream_task:
+        num_classes = 3
+    else:
+        if model_name == "reg_mlp":
+            num_classes = 1
+        else:
+            num_classes = 2
 
     if model_name == "swin4d_ver7":
         net = SwinTransformer4D_ver7(
@@ -34,16 +42,16 @@ def load_model(model_name, hparams=None):
     elif model_name == "clf_mlp":
         if hparams.clf_head_version == 'v1':
             from .clf_mlp import mlp
-            net = mlp(num_classes=2, num_tokens = hparams.embed_dim * (hparams.c_multiplier ** (n_stages - 1)))
+            net = mlp(num_classes=num_classes, num_tokens = hparams.embed_dim * (hparams.c_multiplier ** (n_stages - 1)))
         elif hparams.clf_head_version == 'v2':
             from .clf_mlp_v2 import mlp
-            net = mlp(num_classes=2, num_tokens = hparams.embed_dim * (hparams.c_multiplier ** (n_stages - 1)))
+            net = mlp(num_classes=num_classes, num_tokens = hparams.embed_dim * (hparams.c_multiplier ** (n_stages - 1)))
         else:
             raise NotImplementedError
         # x -> (b, 96, 4, 4, 4, t)
     elif model_name == "reg_mlp":
         from .clf_mlp import mlp
-        net = mlp(num_classes=1, num_tokens = hparams.embed_dim * (hparams.c_multiplier ** (n_stages - 1)))
+        net = mlp(num_classes=num_classes, num_tokens = hparams.embed_dim * (hparams.c_multiplier ** (n_stages - 1)))
     else:
         raise NameError(f"{model_name} is a wrong model name")
 

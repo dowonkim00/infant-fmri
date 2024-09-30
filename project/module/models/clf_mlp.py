@@ -16,4 +16,5 @@ class mlp(nn.Module):
         x = self.avgpool(x.transpose(1, 2))  # B C 1
         x = torch.flatten(x, 1)
         x = self.head(x)
+        print(x.shape)
         return x
