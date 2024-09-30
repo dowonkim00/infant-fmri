@@ -334,6 +334,41 @@ class LitClassifier(pl.LightningModule):
             self.log(f"{mode}_mae", mae, sync_dist=True)
             self.log(f"{mode}_adjusted_mse", adjusted_mse, sync_dist=True) 
             self.log(f"{mode}_adjusted_mae", adjusted_mae, sync_dist=True) 
+            
+            if 'multi' in self.hparams.downstream_task:
+                for i in range(3):
+                    preds_group = subj_avg_logits[i::3]
+                    targets_group = subj_targets[i::3]
+
+                    mse = F.mse_loss(preds_group, targets_group)
+                    mae = F.l1_loss(preds_group, targets_group)
+
+                    # reconstruct to original scale if necessary
+                    if self.hparams.label_scaling_method == 'standardization':  # default
+                        scale = self.scaler.scale_
+                        mean = self.scaler.mean_
+                        adjusted_preds = preds_group * scale + mean
+                        adjusted_targets = targets_group * scale + mean
+                        adjusted_mse = F.mse_loss(adjusted_preds, adjusted_targets)
+                        adjusted_mae = F.l1_loss(adjusted_preds, adjusted_targets)
+                    elif self.hparams.label_scaling_method == 'minmax':
+                        data_max = self.scaler.data_max_
+                        data_min = self.scaler.data_min_
+                        adjusted_preds = preds_group * (data_max - data_min) + data_min
+                        adjusted_targets = targets_group * (data_max - data_min) + data_min
+                        adjusted_mse = F.mse_loss(adjusted_preds, adjusted_targets)
+                        adjusted_mae = F.l1_loss(adjusted_preds, adjusted_targets)
+                    else:
+                        adjusted_mse = mse
+                        adjusted_mae = mae
+
+                    pearson_coef = pearson(preds_group.flatten(), targets_group.flatten())
+
+                    self.log(f"{mode}_corrcoef_{i}", pearson_coef, sync_dist=True)
+                    self.log(f"{mode}_mse_{i}", mse, sync_dist=True)
+                    self.log(f"{mode}_mae_{i}", mae, sync_dist=True)
+                    self.log(f"{mode}_adjusted_mse_{i}", adjusted_mse, sync_dist=True)
+                    self.log(f"{mode}_adjusted_mae_{i}", adjusted_mae, sync_dist=True)
 
     def training_step(self, batch, batch_idx):
         loss = self._calculate_loss(batch, mode="train")
