@@ -228,16 +228,16 @@ class LitClassifier(pl.LightningModule):
             print('subj_logits:',subj_logits)
             print('subj_targets:',total_out[subj_array == subj,1])
             if 'multi' in self.hparams.downstream_task:
-                subj_avg_logits = torch.mean(subj_logits, dim=0)#.numpy()
-                subj_targets.append(total_out[subj_array == subj,1][0])#.numpy())
+                subj_avg_logits = torch.mean(subj_logits, dim=0).numpy()
+                subj_targets.append(total_out[subj_array == subj,1][0].numpy())
             else:
                 subj_avg_logits.append(torch.mean(subj_logits).item())
                 subj_targets.append(total_out[subj_array == subj,1][0].item())
         subj_avg_logits = torch.tensor(subj_avg_logits, device = total_out.device) 
         subj_targets = torch.tensor(subj_targets, device = total_out.device) 
         
-        print('subj_avg_logits:',subj_avg_logits.shape)
-        print('subj_targets:',subj_targets.shape)
+        print('subj_avg_logits:',subj_avg_logits)
+        print('subj_targets:',subj_targets)
         
         if 'multi' in self.hparams.downstream_task:
             subj_avg_logits = torch.stack(subj_avg_logits).to(total_out.device).squeeze()  # Shape: [num_subjects, 3]
