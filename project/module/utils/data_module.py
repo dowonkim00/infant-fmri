@@ -171,7 +171,7 @@ class fMRIDataModule(pl.LightningDataModule):
             
             if 'sex' in self.hparams.downstream_task or 'age' in self.hparams.downstream_task:
                 meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_sex_and_age.csv"))
-            elif 'bsid' in self.hparams.downstream_task:
+            elif 'bsid' in self.hparams.downstream_task or 'qchat' in self.hparams.downstream_task:
                 meta_data = pd.read_csv(os.path.join(self.hparams.image_path, "metadata", "dHCP_metadata.csv"))
             else: raise ValueError('downstream task not supported')
             
