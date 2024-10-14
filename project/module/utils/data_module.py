@@ -185,6 +185,7 @@ class fMRIDataModule(pl.LightningDataModule):
             elif self.hparams.downstream_task == 'bsid_mot_composite': task_name = ['bsid_mot_composite']
             elif self.hparams.downstream_task == 'bsid_multi_risk': task_name = ['bsid_cog_risk','bsid_lang_risk','bsid_mot_risk']
             elif self.hparams.downstream_task == 'bsid_multi_composite': task_name = ['bsid_cog_composite','bsid_lang_composite','bsid_mot_composite']
+            elif self.hparams.downstream_task == 'qchat_total': task_name = ['qchat_total']
             #elif self.hparams.downstream_task == 'int_total': task_name = 'nihtbx_totalcomp_uncorrected'
             else: raise ValueError('downstream task not supported')
            
