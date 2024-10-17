@@ -331,10 +331,13 @@ class dHCP(BaseDataset):
 
                 num_frames = len(os.listdir(subject_path)) - 2 # voxel mean & std
                 session_duration = num_frames - self.sample_duration + 1
-
-                for start_frame in range(0, session_duration, self.stride):
-                    data_tuple = (i, sub_ses, subject_path, start_frame, self.stride, num_frames, target, sex)
-                    data.append(data_tuple)
+                
+                if self.use_first_sequence:
+                    data_tuple = (i, sub_ses, subject_path, 0, self.stride, num_frames, target, sex)
+                else:
+                    for start_frame in range(0, session_duration, self.stride):
+                        data_tuple = (i, sub_ses, subject_path, start_frame, self.stride, num_frames, target, sex)
+                        data.append(data_tuple)
                         
         
             # train dataset

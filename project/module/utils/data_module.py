@@ -309,4 +309,6 @@ class fMRIDataModule(pl.LightningDataModule):
         group.add_argument("--use_ic", action='store_true')
         group.add_argument("--input_features_path", type=str, default="default")
         group.add_argument("--input_mask_path", type=str, default="default")
+        
+        group.add_argument("--use_first_sequence", type=str2bool, default=False)
         return parser
