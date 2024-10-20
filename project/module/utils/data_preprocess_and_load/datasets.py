@@ -334,6 +334,7 @@ class dHCP(BaseDataset):
                 
                 if self.use_first_sequence:
                     data_tuple = (i, sub_ses, subject_path, 0, self.stride, num_frames, target, sex)
+                    data.append(data_tuple)
                 else:
                     for start_frame in range(0, session_duration, self.stride):
                         data_tuple = (i, sub_ses, subject_path, start_frame, self.stride, num_frames, target, sex)
