@@ -310,5 +310,6 @@ class fMRIDataModule(pl.LightningDataModule):
         group.add_argument("--input_features_path", type=str, default="default")
         group.add_argument("--input_mask_path", type=str, default="default")
         
-        group.add_argument("--use_first_sequence", type=str2bool, default=False)
+        group.add_argument("--use_first_sequence", action='store_true', help="only use the first sequence of the fMRI data, discard the rest")
+
         return parser
